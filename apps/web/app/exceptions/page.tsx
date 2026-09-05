@@ -77,10 +77,10 @@ function ExceptionsContent() {
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Exceptions</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-xl font-semibold text-slate-900">Exceptions</h1>
+          <p className="mt-0.5 text-[13px] text-slate-500">
             Exceptions prioritized by risk and monetary impact
-            {selected && <span className="ml-2 text-emerald-600">— viewing case {selected}</span>}
+            {selected && <span className="ml-2 font-medium text-slate-700">— viewing case {selected}</span>}
           </p>
         </div>
         <div className="flex gap-2">
@@ -116,7 +116,7 @@ function ExceptionsContent() {
                 <Link
                   key={c.case_id}
                   href={`/exceptions/${c.case_id}`}
-                  className={`flex items-center justify-between p-4 transition-colors hover:bg-gray-50 ${selected === c.case_id ? "bg-emerald-50" : ""}`}
+                  className={`flex items-center justify-between p-4 transition-colors hover:bg-slate-50 ${selected === c.case_id ? "bg-slate-100 ring-1 ring-inset ring-slate-200" : ""}`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">

@@ -8,15 +8,16 @@ function listenFor(wait = 50): Promise<{
   message: string;
 }> {
   return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      window.removeEventListener("recofin:api-error", handler);
+      reject(new Error("no global API error event dispatched"));
+    }, wait);
     const handler = (e: Event) => {
+      clearTimeout(timer);
       window.removeEventListener("recofin:api-error", handler);
       resolve((e as CustomEvent).detail);
     };
     window.addEventListener("recofin:api-error", handler);
-    setTimeout(() => {
-      window.removeEventListener("recofin:api-error", handler);
-      reject(new Error("no global API error event dispatched"));
-    }, wait);
   });
 }
 

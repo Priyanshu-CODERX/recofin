@@ -307,15 +307,15 @@ export default function ExceptionInvestigator() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <Link href="/exceptions" className="text-sm text-gray-500 hover:text-gray-700">
+        <Link href="/exceptions" className="text-[13px] text-slate-500 hover:text-slate-900">
           <ArrowLeft className="mr-1 inline h-3 w-3" /> Back to Exceptions
         </Link>
-        <div className="mt-2 flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{data?.case_id}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="font-mono text-xl font-semibold text-slate-900">{data?.case_id}</h1>
           {statusBadge(data?.status || "")}
           {riskBadge(data?.risk || "")}
         </div>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-[13px] text-slate-500">
           {data?.record_type} · {data?.source} · {((data?.amount ?? 0) / 100).toLocaleString("en-IN", { style: "currency", currency: data?.currency || "INR" })}
         </p>
       </div>

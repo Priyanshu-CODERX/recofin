@@ -7,8 +7,8 @@ import { SlidersHorizontal, Bot, ShieldCheck, BookOpen, Compass, Users, Workflow
 
 function SectionTitle({ icon: Icon, children, id }: { icon: typeof Compass; children: React.ReactNode; id?: string }) {
   return (
-    <h2 id={id} className="mt-10 mb-3 flex items-center gap-2 text-xl font-bold text-gray-900">
-      <Icon className="h-5 w-5 text-emerald-600" />
+    <h2 id={id} className="mt-10 mb-3 flex items-center gap-2 text-xl font-bold text-slate-900">
+      <Icon className="h-5 w-5 text-slate-400" />
       {children}
     </h2>
   );
@@ -16,12 +16,12 @@ function SectionTitle({ icon: Icon, children, id }: { icon: typeof Compass; chil
 
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-gray-200 p-4">
-      <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-gray-800">
+    <div className="rounded-md border border-slate-200 p-4">
+      <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate-800">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">{n}</span>
         {title}
       </p>
-      <div className="pl-8 text-sm text-gray-600">{children}</div>
+      <div className="pl-8 text-sm text-slate-600">{children}</div>
     </div>
   );
 }

@@ -120,8 +120,8 @@ export default function EvaluationLab() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Evaluation Lab</h1>
-        <p className="text-sm text-gray-500">Measure Recofin against hidden ground truth</p>
+        <h1 className="text-xl font-semibold text-slate-900">Evaluation Lab</h1>
+        <p className="mt-0.5 text-[13px] text-slate-500">Measure Recofin against hidden ground truth</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

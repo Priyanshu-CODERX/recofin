@@ -14,7 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { RefreshCw, TrendingUp, AlertTriangle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Summary {
   total_records: number;
@@ -48,6 +49,58 @@ interface Trends {
   };
 }
 
+const RISK_TONE: Record<string, { bar: string; badge: "success" | "warning" | "destructive"; dot: string }> = {
+  LOW: { bar: "bg-emerald-500", badge: "success", dot: "bg-emerald-500" },
+  MEDIUM: { bar: "bg-amber-500", badge: "warning", dot: "bg-amber-500" },
+  HIGH: { bar: "bg-rose-400", badge: "destructive", dot: "bg-rose-500" },
+  CRITICAL: { bar: "bg-rose-600", badge: "destructive", dot: "bg-rose-600" },
+};
+
+const RISK_ORDER = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+function RiskDistribution({ distribution }: { distribution: Record<string, number> }) {
+  const entries = Object.entries(distribution ?? {});
+  if (entries.length === 0) {
+    return <p className="text-sm text-slate-400">No cases classified yet.</p>;
+  }
+  const total = entries.reduce((acc, [, v]) => acc + v, 0);
+  const sorted = RISK_ORDER.filter((k) => (distribution[k] ?? 0) > 0).map((k) => ({
+    risk: k,
+    count: distribution[k],
+  }));
+
+  return (
+    <div>
+      <div className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-slate-100">
+        {sorted.map((s) => (
+          <div
+            key={s.risk}
+            style={{ width: `${(s.count / total) * 100}%` }}
+            className={cn("h-full", RISK_TONE[s.risk]?.bar ?? "bg-slate-300")}
+            title={`${s.risk}: ${s.count}`}
+          />
+        ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        {sorted.map((s) => {
+          const pct = ((s.count / total) * 100).toFixed(0);
+          return (
+            <div key={s.risk} className="flex items-center gap-2 text-[13px]">
+              <span className={cn("h-2 w-2 rounded-full", RISK_TONE[s.risk]?.dot)} />
+              <span className="w-20 text-slate-500">{s.risk}</span>
+              <div className="h-1 flex-1 rounded-full bg-slate-100">
+                <div className={cn("h-full rounded-full", RISK_TONE[s.risk]?.bar)} style={{ width: `${pct}%` }} />
+              </div>
+              <span className="w-10 text-right font-medium tabular-nums text-slate-900">{s.count}</span>
+              <span className="w-12 text-right text-xs tabular-nums text-slate-400">{pct}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function CommandCenter() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [trends, setTrends] = useState<Trends | null>(null);
@@ -69,15 +122,20 @@ export default function CommandCenter() {
     load();
   }, []);
 
+  const matchRate =
+    summary && summary.total_records > 0
+      ? `${((summary.reconciled / summary.total_records) * 100).toFixed(1)}%`
+      : "—";
+
   return (
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Command Center</h1>
-          <p className="text-sm text-gray-500">Live operational metrics from real backend data</p>
+          <h1 className="text-xl font-semibold text-slate-900">Command Center</h1>
+          <p className="mt-0.5 text-[13px] text-slate-500">Live operational metrics from the running controller</p>
         </div>
         <Button variant="outline" size="sm" onClick={load}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 h-3.5 w-3.5" />
           Refresh
         </Button>
       </div>
@@ -85,27 +143,27 @@ export default function CommandCenter() {
       {loading && !summary ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
             <MetricCard label="Total Records" value={summary?.total_records ?? 0} />
-            <MetricCard label="Reconciled" value={summary?.reconciled ?? 0} />
-            <MetricCard label="Auto-Resolved" value={summary?.auto_resolved ?? 0} />
-            <MetricCard label="Exceptions" value={summary?.exceptions ?? 0} />
-            <MetricCard label="Human Review" value={summary?.human_review ?? 0} />
+            <MetricCard label="Match Rate" value={matchRate} tone="positive" />
+            <MetricCard label="Auto-Resolved" value={summary?.auto_resolved ?? 0} tone="positive" />
+            <MetricCard label="Exceptions" value={summary?.exceptions ?? 0} tone="negative" sublabel={`${summary?.unmatched ?? 0} unmatched`} />
+            <MetricCard label="Human Review" value={summary?.human_review ?? 0} sublabel={`${summary?.total_cases ?? 0} open cases`} />
             <MetricCard label="Precision" value={`${((summary?.precision ?? 0) * 100).toFixed(1)}%`} />
             <MetricCard label="Recall" value={`${((summary?.recall ?? 0) * 100).toFixed(1)}%`} />
             <MetricCard label="False Auto-Match" value={`${((summary?.false_auto_match_rate ?? 0) * 100).toFixed(1)}%`} />
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card>
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  <TrendingUp className="h-4 w-4 text-slate-500" />
                   Reconciliation Runs
                 </CardTitle>
                 <CardDescription>Recent reconciliation activity</CardDescription>
@@ -113,17 +171,23 @@ export default function CommandCenter() {
               <CardContent>
                 <div className="space-y-2">
                   {(trends?.reconciliation_runs?.length ?? 0) === 0 && (
-                    <p className="text-sm text-gray-400">No reconciliation runs yet. Run reconciliation to populate data.</p>
+                    <p className="text-sm text-slate-400">No reconciliation runs yet. Run reconciliation to populate data.</p>
                   )}
                   {trends?.reconciliation_runs?.slice(0, 5).map((r) => (
-                    <div key={r.run_id} className="flex items-center justify-between rounded-md border p-2">
-                      <div>
-                        <p className="text-sm font-medium">{r.total_records} records processed</p>
-                        <p className="text-xs text-gray-400">
-                          {r.matched} matched · {r.exceptions} exceptions · {r.auto_resolved} auto-resolved
-                        </p>
+                    <div
+                      key={r.run_id}
+                      className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3 transition-colors hover:bg-slate-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-medium text-slate-900">{r.total_records} records processed</p>
+                        <p className="mt-0.5 truncate font-mono text-xs text-slate-400">{r.run_id}</p>
                       </div>
-                      <span className="text-xs text-gray-400">{r.duration_seconds?.toFixed(1)}s</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-slate-500">
+                          {r.matched} matched · {r.exceptions} exceptions · {r.auto_resolved} auto-resolved
+                        </span>
+                        <span className="text-xs tabular-nums text-slate-400">{r.duration_seconds?.toFixed(1)}s</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -139,43 +203,39 @@ export default function CommandCenter() {
                 <CardDescription>Cases by risk level</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(trends?.risk_distribution ?? {}).map(([risk, count]) => (
-                    <div key={risk} className="flex items-center justify-between">
-                      <Badge
-                        variant={
-                          risk === "LOW" ? "success" : risk === "MEDIUM" ? "warning" : "destructive"
-                        }
-                      >
-                        {risk}
-                      </Badge>
-                      <span className="text-sm font-medium">{count}</span>
-                    </div>
-                  ))}
-                </div>
+                <RiskDistribution distribution={trends?.risk_distribution ?? {}} />
               </CardContent>
             </Card>
           </div>
 
           <div className="mt-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-slate-500" />
                   Source Health
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-md border p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">Synthetic</p>
-                      <Badge variant="success">Active</Badge>
+                <div className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50">
+                      <ShieldCheck className="h-4 w-4 text-slate-500" />
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      {trends?.source_health?.synthetic?.records ?? 0} records available
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-medium text-slate-900">Synthetic</p>
+                        <Badge variant="success">Active</Badge>
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {trends?.source_health?.synthetic?.records ?? 0} records available
+                      </p>
+                    </div>
                   </div>
+                  <span className="text-xs tabular-nums text-slate-400">
+                    {summary?.total_payments ?? 0} payments · {summary?.total_settlements ?? 0} settlements ·{" "}
+                    {summary?.total_bank_transactions ?? 0} bank txns
+                  </span>
                 </div>
               </CardContent>
             </Card>

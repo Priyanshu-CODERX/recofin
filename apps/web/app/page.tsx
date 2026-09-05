@@ -22,9 +22,9 @@ const ctaSm =
   "inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium transition-colors";
 const ctaLg =
   "inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-8 text-sm font-medium transition-colors";
-const ctaPrimary = "bg-emerald-600 text-white hover:bg-emerald-700";
-const ctaOutline = "border border-gray-300 bg-white text-gray-900 hover:bg-gray-50";
-const ctaSecondary = "bg-white text-emerald-700 hover:bg-emerald-50";
+const ctaPrimary = "bg-slate-900 text-white hover:bg-slate-800";
+const ctaOutline = "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50";
+const ctaSecondary = "bg-white text-slate-900 hover:bg-slate-50";
 
 interface Summary {
   total_records: number;
@@ -130,8 +130,8 @@ function LiveStrip() {
   const hasData = (summary?.total_records ?? 0) > 0;
   if (!hasData) {
     return (
-      <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white px-6 py-5 text-center shadow-sm">
-        <p className="text-sm text-gray-600">
+      <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-dashed border-slate-300 bg-white px-6 py-5 text-center shadow-sm">
+        <p className="text-sm text-slate-600">
           No data loaded yet. Generate a dataset to unlock live numbers on this page.
         </p>
         <Link href="/sources" className={cn(ctaSm, ctaOutline, "mt-3")}>Generate a dataset →</Link>
@@ -152,8 +152,8 @@ function LiveStrip() {
     <div className="mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-3">
       {items.map((it) => (
         <div key={it.label} className="rounded-xl border bg-white p-4 text-center shadow-sm">
-          <p className="text-xs font-medium text-gray-500">{it.label}</p>
-          <p className="mt-1 text-xl font-bold text-gray-900">{it.value}</p>
+          <p className="text-xs font-medium text-slate-500">{it.label}</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-slate-900">{it.value}</p>
         </div>
       ))}
     </div>
@@ -162,12 +162,12 @@ function LiveStrip() {
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="min-h-screen bg-background font-sans text-slate-900">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
               <Shield className="h-4 w-4" />
             </div>
             <div>

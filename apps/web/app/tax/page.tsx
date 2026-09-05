@@ -140,18 +140,18 @@ export default function TaxMatcherPage() {
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tax-Line Matcher</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-xl font-semibold text-slate-900">Tax-Line Matcher</h1>
+          <p className="mt-0.5 text-[13px] text-slate-500">
             Verifies recorded tax against expected tax — gross minus settlement minus fee, or taxable × tax rate
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={handleRun} disabled={running}>
-            {running ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Play className="mr-1 h-4 w-4" />}
+            {running ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Play className="mr-1 h-3.5 w-3.5" />}
             {running ? "Matching…" : "Run matcher"}
           </Button>
           <Button variant="outline" size="sm" onClick={() => load(status, search)}>
-            <RefreshCw className="mr-1 h-4 w-4" /> Refresh
+            <RefreshCw className="mr-1 h-3.5 w-3.5" /> Refresh
           </Button>
         </div>
       </div>
@@ -166,10 +166,10 @@ export default function TaxMatcherPage() {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <MetricCard label="Lines Checked" value={metrics?.checked ?? 0} />
-        <MetricCard label="Verified" value={metrics?.verified ?? 0} />
-        <MetricCard label="Exceptions" value={metrics?.exceptions ?? 0} />
+        <MetricCard label="Verified" value={metrics?.verified ?? 0} tone="positive" />
+        <MetricCard label="Exceptions" value={metrics?.exceptions ?? 0} tone="negative" />
         <MetricCard label="Human Review" value={metrics?.human_review ?? 0} />
-        <MetricCard label="Match Rate" value={`${((metrics?.match_rate ?? 0) * 100).toFixed(1)}%`} sublabel="Verified / checked" />
+        <MetricCard label="Match Rate" value={`${((metrics?.match_rate ?? 0) * 100).toFixed(1)}%`} sublabel="Verified / checked" tone="positive" />
       </div>
 
       <Card className="mt-6">
@@ -181,15 +181,15 @@ export default function TaxMatcherPage() {
             <CardDescription>{total} result(s) · click a row for calculation & evidence</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex rounded-md border">
+            <div className="flex rounded-lg border border-slate-200 p-0.5">
               {STATUSES.map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatus(s)}
-                  className={`px-3 py-1.5 text-xs font-medium ${
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                     status === s
-                      ? "bg-emerald-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-white text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   {s === "ALL" ? "All" : s.replace("_", " ")}
@@ -258,8 +258,18 @@ export default function TaxMatcherPage() {
                   <span className="col-span-1">
                     <Badge variant={statusBadge[m.status]}>{m.status.replace("_", " ")}</Badge>
                   </span>
-                  <span className="col-span-2 text-right text-sm text-gray-600">
-                    {(m.confidence * 100).toFixed(0)}%
+                  <span className="col-span-2 flex items-center justify-end gap-2">
+                    <span className="h-1.5 w-14 overflow-hidden rounded-full bg-slate-100">
+                      <span
+                        className={`block h-full rounded-full ${
+                          m.confidence >= 0.8 ? "bg-emerald-500" : m.confidence >= 0.5 ? "bg-amber-500" : "bg-rose-500"
+                        }`}
+                        style={{ width: `${(m.confidence * 100).toFixed(0)}%` }}
+                      />
+                    </span>
+                    <span className="text-[13px] font-medium tabular-nums text-slate-700">
+                      {(m.confidence * 100).toFixed(0)}%
+                    </span>
                   </span>
                 </button>
               ))}
