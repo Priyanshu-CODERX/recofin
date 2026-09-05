@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
 from app.db import Database
+
+logger = logging.getLogger("recofin")
 
 router = APIRouter(prefix="/synthetic", tags=["synthetic"])
 
@@ -11,6 +15,27 @@ class GenerateRequest(BaseModel):
     n_cases: int = 100
     scenario_mix: Optional[dict[str, int]] = None
     seed: int = 42
+
+
+class ResetRequest(BaseModel):
+    confirm: bool = False
+
+
+# Operational collections removed by a full reset. policy_config is kept so the
+# Policy page always has a valid ruleset to load.
+RESET_COLLECTIONS = [
+    "financial_records",
+    "reconciliation_cases",
+    "reconciliation_runs",
+    "tax_matches",
+    "evidence_items",
+    "audit_events",
+    "synthetic_datasets",
+    "ground_truth",
+    "evaluation_runs",
+    "agent_runs",
+    "agent_events",
+]
 
 
 @router.post("/generate")
@@ -72,3 +97,28 @@ async def list_datasets():
         d["dataset_id"] = str(d.get("_id"))
         d.pop("_id", None)
     return {"datasets": datasets}
+
+
+@router.post("/reset")
+async def reset_all_data(req: ResetRequest):
+    """Wipe all operational data (records → 0) so a fresh synthetic set can be generated.
+
+    Requires confirm=true to guard against accidental resets.
+    """
+    if not req.confirm:
+        raise HTTPException(status_code=400, detail="Reset requires confirm=true")
+
+    db = Database.get_db()
+    deleted: dict[str, int] = {}
+    for name in RESET_COLLECTIONS:
+        result = await db[name].delete_many({})
+        deleted[name] = result.deleted_count
+
+    total = sum(deleted.values())
+    logger.info("Reset data: removed %s docs across %s collections", total, len(RESET_COLLECTIONS))
+    return {
+        "reset": True,
+        "deleted": deleted,
+        "total_removed": total,
+        "records": deleted.get("financial_records", 0),
+    }

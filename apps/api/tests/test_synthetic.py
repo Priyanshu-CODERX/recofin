@@ -48,3 +48,41 @@ def test_duplicate_scenario():
     assert case.ground_truth["expected_outcome"] == "duplicate"
     payments = [r for r in case.records if r.record_type == RecordType.PAYMENT]
     assert len(payments) == 2
+
+
+async def _mongodb_available() -> bool:
+    try:
+        from app.db import Database
+
+        db = Database.get_db()
+        await db.command("ping")
+        return True
+    except Exception:
+        return False
+
+
+@pytest.mark.asyncio
+async def test_reset_clears_operational_data():
+    if not await _mongodb_available():
+        pytest.skip("MongoDB not available; skipping reset integration test")
+
+    from fastapi import HTTPException
+    from app.api.synthetic import ResetRequest, reset_all_data
+    from app.db import Database
+
+    db = Database.get_db()
+
+    # Seed one record so the reset has something to remove.
+    await db.financial_records.insert_one({"external_id": "RST_1", "source": "synthetic", "record_type": "payment"})
+    count_before = await db.financial_records.count_documents({})
+    assert count_before >= 1
+
+    # Without confirmation the endpoint must refuse.
+    with pytest.raises(HTTPException):
+        await reset_all_data(ResetRequest(confirm=False))
+
+    # With confirmation it wipes operational collections (records → 0).
+    outcome = await reset_all_data(ResetRequest(confirm=True))
+    assert outcome["reset"] is True
+    assert await db.financial_records.count_documents({}) == 0
+    assert outcome["records"] == count_before

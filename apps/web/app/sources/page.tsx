@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { Database, RefreshCw } from "lucide-react";
+import { Database, RefreshCw, Trash2 } from "lucide-react";
 
 interface Dataset {
   dataset_id: string;
@@ -26,6 +26,13 @@ interface GenerateResponse {
   inserted_ground_truths?: number;
 }
 
+interface ResetResponse {
+  reset: boolean;
+  deleted?: Record<string, number>;
+  total_removed?: number;
+  records?: number;
+}
+
 export default function DataSources() {
   const [nCases, setNCases] = useState(100);
   const [seed, setSeed] = useState(42);
@@ -33,7 +40,9 @@ export default function DataSources() {
   const [lastGenerate, setLastGenerate] = useState<GenerateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const loadDatasets = async () => {
     setLoading(true);
@@ -49,6 +58,7 @@ export default function DataSources() {
   const generate = async () => {
     setGenerating(true);
     setError(null);
+    setResetMessage(null);
     try {
       const res = await api.post<GenerateResponse>("/synthetic/generate", {
         n_cases: nCases,
@@ -61,6 +71,28 @@ export default function DataSources() {
       setError("Failed to generate synthetic data.");
     }
     setGenerating(false);
+  };
+
+  const resetData = async () => {
+    const ok = window.confirm(
+      "Reset ALL data to 0?\n\nThis wipes every record, case, tax match, evaluation, and audit event, then you can generate a fresh synthetic set.",
+    );
+    if (!ok) return;
+    setResetting(true);
+    setError(null);
+    setResetMessage(null);
+    try {
+      const res = await api.post<ResetResponse>("/synthetic/reset", { confirm: true });
+      setLastGenerate(null);
+      await loadDatasets();
+      setResetMessage(
+        `Data reset — ${res.records ?? 0} records now. Generate a new set to continue.`,
+      );
+    } catch (e) {
+      console.error(e);
+      setError("Failed to reset data.");
+    }
+    setResetting(false);
   };
 
   return (
@@ -119,7 +151,29 @@ export default function DataSources() {
                 {generating ? "Generating..." : "Generate"}
               </Button>
 
+              <div className="my-2 border-t border-slate-100" />
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={resetData}
+                disabled={resetting}
+                className="w-full"
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                {resetting ? "Resetting..." : "Reset All Data (0 records)"}
+              </Button>
+              <p className="text-center text-[11px] text-slate-400">
+                Wipes every record & derived case, then regenerate a fresh set below.
+              </p>
+
               {error && <p className="text-xs text-red-500">{error}</p>}
+
+              {resetMessage && (
+                <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                  <p className="font-medium text-slate-700">{resetMessage}</p>
+                </div>
+              )}
 
               {lastGenerate && (
                 <div className="mt-4 rounded-md border p-3 text-sm">
