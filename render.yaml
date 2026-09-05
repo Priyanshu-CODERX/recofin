@@ -1,0 +1,34 @@
+# Render Blueprint — deploy the Recofin API on Render's free tier.
+# How to use:
+#   1. Push this repo to GitHub.
+#   2. In Render: New +  > Blueprint  and select the repo.
+#   3. After the service is created, open it and set the `sync: false` vars:
+#        MONGODB_URI   -> your MongoDB Atlas connection string
+#        GROQ_API_KEY  -> your Groq key (optional; AI degrades to HUMAN_REVIEW)
+#        CORS_ORIGINS  -> the URL of the deployed frontend, e.g.
+#                         https://recofin.vercel.app
+#   4. Frontend lives on Vercel (root directory: apps/web, env
+#      NEXT_PUBLIC_API_URL = this service's URL, e.g. https://recofin-api.onrender.com).
+services:
+  - type: web
+    name: recofin-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: recofin
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_TEMPERATURE
+        value: "0"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PORT
+        value: "8000"
